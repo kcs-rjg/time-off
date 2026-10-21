@@ -269,29 +269,62 @@ function alertBox(msg) {
 // ============================================================
 // Sign in
 // ============================================================
-function renderSignIn(sent) {
+// Sign-in uses a one-time code typed into the page. School email systems often
+// "pre-click" links to scan them, which uses up a link before the person can.
+function renderSignIn(email, msg) {
   $('tabs').innerHTML = ''; $('who').innerHTML = '';
   $('app').innerHTML = `
   <div class="narrow card">
     <h1>Sign in</h1>
-    ${sent ? `<p>Check your email for a sign-in link. You can close this tab and use the link.</p>` : `
-    <p class="muted">Enter your school email address and we will send you a sign-in link.</p>
+    ${msg ? `<div class="error" role="alert">${esc(msg)}</div>` : ''}
+    ${email ? `
+    <p>We have emailed a sign-in code to <strong>${esc(email)}</strong>. Enter it below.</p>
+    <form id="codeform">
+      <div class="field"><label for="cd">Sign-in code</label>
+        <input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required></div>
+      <div id="sierr" class="error hidden" role="alert"></div>
+      <button class="btn primary wide" type="submit">Sign in</button>
+    </form>
+    <p class="small muted" style="margin-top:14px">The code lasts about an hour. <a href="#" id="again">Use a different email or send a new code</a></p>` : `
+    <p class="muted">Enter your school email address and we will email you a sign-in code.</p>
     <form id="signin">
       <div class="field"><label for="em">Email address</label><input id="em" type="email" required autocomplete="email"></div>
-      <div id="sierr" class="error hidden"></div>
-      <button class="btn primary wide" type="submit">Send sign-in link</button>
-    </form>`}
+      <div id="sierr" class="error hidden" role="alert"></div>
+      <button class="btn primary wide" type="submit">Email me a code</button>
+    </form>
+    <p class="small muted" style="margin-top:14px"><a href="#" id="have">I already have a code</a></p>`}
   </div>`;
-  if (sent) return;
+  const showErr = (m) => { $('sierr').textContent = m; $('sierr').classList.remove('hidden'); };
+  if (email) {
+    $('again').onclick = (e) => { e.preventDefault(); renderSignIn(null); };
+    $('cd').focus();
+    $('codeform').onsubmit = async (e) => {
+      e.preventDefault();
+      const b = e.target.querySelector('button'); b.disabled = true;
+      const { error } = await sb.auth.verifyOtp({ email, token: $('cd').value.trim(), type: 'email' });
+      b.disabled = false;
+      if (error) return showErr(/expired|invalid/i.test(error.message) ? 'That code has expired or is not right. Check the latest email, or send a new code.' : error.message);
+      S.loading = true; await refresh(); S.loading = false;
+    };
+    return;
+  }
+  $('have').onclick = (e) => {
+    e.preventDefault();
+    const em = $('em').value.trim().toLowerCase();
+    if (!em) return showErr('Enter your email address first.');
+    renderSignIn(em);
+  };
   $('signin').onsubmit = async (e) => {
     e.preventDefault();
-    const email = $('em').value.trim().toLowerCase();
-    if (ALLOWED_EMAIL_DOMAIN && !email.endsWith('@' + ALLOWED_EMAIL_DOMAIN)) {
-      $('sierr').textContent = 'Please use your @' + ALLOWED_EMAIL_DOMAIN + ' address.'; $('sierr').classList.remove('hidden'); return;
-    }
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-    if (error) { $('sierr').textContent = error.message; $('sierr').classList.remove('hidden'); return; }
-    renderSignIn(true);
+    const em = $('em').value.trim().toLowerCase();
+    if (ALLOWED_EMAIL_DOMAIN && !em.endsWith('@' + ALLOWED_EMAIL_DOMAIN)) return showErr('Please use your @' + ALLOWED_EMAIL_DOMAIN + ' address.');
+    const b = e.target.querySelector('button'); b.disabled = true;
+    const { error } = await sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } });
+    b.disabled = false;
+    if (error) return showErr(/rate limit/i.test(error.message)
+      ? 'Too many emails have been sent recently. Please wait a while and try again, or use "I already have a code" if a recent email arrived.'
+      : error.message);
+    renderSignIn(em);
   };
 }
 function renderNotSetUp() {
@@ -300,7 +333,7 @@ function renderNotSetUp() {
   $('app').innerHTML = `<div class="narrow card"><h1>Not set up yet</h1>
     <p>You have signed in, but you have not been added to the Time Off app yet. Please ask your line manager to add you, then sign in again.</p></div>`;
 }
-async function signOut() { await sb.auth.signOut(); S.me = null; renderSignIn(false); }
+async function signOut() { await sb.auth.signOut(); S.me = null; renderSignIn(null); }
 
 // ============================================================
 // Layout
@@ -861,7 +894,7 @@ function bhForm() {
 // Start
 // ============================================================
 sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') { S.me = null; renderSignIn(false); }
+  if (event === 'SIGNED_OUT') { S.me = null; renderSignIn(null); }
   if (event === 'SIGNED_IN' && !S.me && !S.loading) { S.loading = true; refresh().finally(() => { S.loading = false; }); }
 });
 (async () => {
@@ -871,7 +904,14 @@ sb.auth.onAuthStateChange((event, session) => {
   }
   S.loading = true;
   const { data } = await sb.auth.getSession();
-  if (!data.session) { S.loading = false; return renderSignIn(false); }
+  // a sign-in link that failed (eg already used by an email scanner) comes back with an error in the address
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const linkError = hash.get('error_description');
+  if (linkError) history.replaceState(null, '', location.pathname);
+  if (!data.session) {
+    S.loading = false;
+    return renderSignIn(null, linkError ? 'That sign-in link had already been used or had expired. Please ask for a new code below.' : null);
+  }
   await refresh(); S.loading = false;
 })();
 </script>

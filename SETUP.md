@@ -46,9 +46,25 @@ Sign-in links need to send people back to the right address.
 3. Under **Redirect URLs**, add the same address, and click **Save**.
 4. Under **Authentication**, then **Sign In / Providers**, check that **Confirm email** is on and **Allow anonymous sign-ins** is off. Both are the normal settings, and the app relies on them.
 
+## 5a. Make the sign-in emails send a code
+
+School email systems often open links in emails automatically to check them for viruses, which uses up a one-time sign-in link before you can click it. So the app signs people in with a code they type in instead.
+
+1. In Supabase, go to **Authentication**, then **Emails** (it may be called **Email Templates**).
+2. Open the **Magic Link** template. Set the subject to `Your Time Off sign-in code` and replace the message with:
+
+   ```html
+   <h2>Your sign-in code</h2>
+   <p>Your code for the King's Time Off app is:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:4px">{{ .Token }}</p>
+   <p>It lasts about an hour. If you did not ask for it, you can ignore this email.</p>
+   ```
+
+3. Click **Save**, then do the same for the **Confirm signup** template, which is the email a person receives the very first time they sign in.
+
 ## 6. Sign in and add your team
 
-1. Open your GitHub Pages address and sign in with **rjg@kcs.org.uk**. Use the link in the email.
+1. Open your GitHub Pages address, enter **rjg@kcs.org.uk**, and type in the code from the email.
 2. You will land on your own page, with **Team** and **Settings** tabs at the top because you are the administrator.
 3. Go to **Settings** and check the term dates and bank holidays.
 4. Go to **Team** and click **Add a person** for each colleague. Add the approvers (eg Dave) first, so that you can tick them when you add the people they approve for. For each person:
@@ -67,4 +83,4 @@ Stage 2 connects a proper email-sending service. That opens sign-in to the team 
 
 - **"Not set up yet" after signing in:** your email address in the database does not match the one you signed in with. Check the last lines of schema.sql.
 - **An error mentioning "schema" or "timeoff":** step 3 has not been saved.
-- **The sign-in link opens the wrong page:** check step 5.
+- **"Email rate limit exceeded":** Supabase's built-in email allows only a few emails an hour. Wait an hour and try again; stage 2 removes this limit.
