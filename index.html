@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Off - King's College School</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+<style>
+:root{
+  --blue:#05214c; --reflex:#000898; --yellow:#fab31e; --ink:#0a0e1a; --ink-soft:#4a5160;
+  --paper:#ffffff; --warm:#f7f6f2; --rule:#d9dde3; --rule-strong:#b6bcc6; --chip:#eef0f4;
+  --pend-bg:#fff4d6; --pend:#6b4700; --ok-bg:#e2f0e6; --ok:#1b5130; --no-bg:#f9e3e5; --no:#8a1c2b;
+  --hours:#a9c4e8; --absent:#808d9a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--warm);color:var(--ink);font-family:"Gill Sans Nova","Gill Sans MT","Gill Sans","Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.5}
+a{color:var(--blue)} a:hover{color:var(--reflex)}
+button,input,select,textarea{font:inherit}
+header.top{background:var(--blue);color:#fff}
+.top-inner{max-width:1200px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.brand small{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#c9d1de}
+.brand span{font-size:24px;font-weight:500}
+nav.tabs{display:flex;flex-wrap:wrap;gap:2px}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:#fff;padding:10px 12px;cursor:pointer;font-size:15px}
+nav.tabs button[aria-current="page"]{border-bottom-color:var(--yellow)}
+.who{font-size:14px;color:#c9d1de}
+.who button{background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer;font-size:14px;padding:4px}
+main{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+.narrow{max-width:560px}
+h1{margin:0 0 6px;font-size:32px;font-weight:500;color:var(--blue);line-height:1.15}
+h2{margin:0 0 10px;font-size:20px;font-weight:500;color:var(--blue)}
+.muted{color:var(--ink-soft)} .small{font-size:14px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.card{background:#fff;border:1px solid var(--rule);padding:22px;margin-bottom:16px}
+.big{font-size:48px;font-weight:500;line-height:1.1;color:var(--blue)}
+.bar{display:flex;height:12px;background:var(--chip);margin:10px 0}
+.bar .a{background:var(--blue)} .bar .p{background:repeating-linear-gradient(135deg,#9fb0cc 0 4px,#c9d3e3 4px 8px)}
+.key{display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:14px;color:var(--ink-soft)}
+.key i{width:10px;height:10px;display:inline-block}
+.btn{display:inline-block;font-size:15px;padding:12px 18px;border:1px solid var(--rule-strong);background:#fff;color:var(--blue);cursor:pointer;text-align:center;text-decoration:none}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.btn.wide{width:100%;font-size:17px;padding:14px}
+.btn.small{padding:8px 12px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.btnrow .btn{flex:1 1 140px}
+.list .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--rule)}
+.list .item:last-child{border-bottom:1px solid var(--rule)}
+.chip{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.chip.pending{background:var(--pend-bg);color:var(--pend)} .chip.approved{background:var(--ok-bg);color:var(--ok)}
+.chip.declined{background:var(--no-bg);color:var(--no)} .chip.cancelled{background:var(--chip);color:var(--ink-soft)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;background:var(--chip);color:var(--ink-soft);border-radius:2px;margin-top:4px}
+.tag.warn{background:var(--pend-bg);color:var(--pend)} .tag.ok{background:var(--ok-bg);color:var(--ok)}
+.banner{padding:12px 16px;background:var(--pend-bg);color:var(--pend);margin-bottom:16px}
+.error{padding:12px 16px;background:var(--no-bg);color:var(--no);margin-bottom:16px}
+.cols{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.cols>.main{flex:999 1 560px;min-width:0} .cols>.side{flex:1 1 300px}
+.req{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
+.req .info{display:flex;flex-direction:column;gap:2px;min-width:240px}
+.req .title{font-size:19px;color:var(--blue)}
+fieldset{border:1px solid var(--rule);padding:12px 14px;margin:12px 0 0}
+legend{padding:0 6px;font-weight:500;color:var(--blue)}
+label.radio{display:flex;gap:10px;align-items:flex-start;margin:6px 0;cursor:pointer}
+label.radio input{margin-top:4px;width:18px;height:18px;accent-color:var(--blue)}
+dialog{border:0;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 24px 48px -16px rgba(5,33,76,.18)}
+dialog::backdrop{background:rgba(5,33,76,.4)}
+.dlg{padding:24px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.field label{font-weight:500}
+.field input,.field select,.field textarea{padding:10px 12px;border:1px solid var(--rule-strong);border-radius:2px;background:#fff;color:var(--ink)}
+.field .hint{font-size:14px;color:var(--ink-soft)}
+.row2{display:flex;gap:12px;flex-wrap:wrap}.row2>.field{flex:1 1 180px}
+.check{display:flex;gap:8px;align-items:center;margin:6px 0}
+.check input{width:18px;height:18px;accent-color:var(--blue)}
+table.data{width:100%;border-collapse:collapse;font-size:15px}
+table.data th,table.data td{text-align:left;padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.data th{font-size:13px;color:var(--ink-soft);font-weight:600}
+.scroll{overflow-x:auto}
+.cal{display:grid;gap:3px;align-items:center;min-width:900px}
+.cal .hd{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--ink-soft)}
+.cal .hd b{font-size:15px;color:var(--ink);font-weight:400}
+.cal .nm{font-size:15px;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell{height:34px;background:#fff;border:1px solid #e6e9ee}
+.c-term{background:#fbfaf7}
+.c-leave{background:var(--blue);border-color:var(--blue)}
+.c-pending{background:repeating-linear-gradient(135deg,#9fb0cc 0 4px,#c9d3e3 4px 8px);border-color:#9fb0cc}
+.c-half{background:linear-gradient(to bottom,var(--blue) 0 50%,#fff 50% 100%);border-color:var(--blue)}
+.c-hours{background:var(--hours);border-color:var(--hours)}
+.c-absent{background:var(--absent);border-color:var(--absent)}
+.c-bh{background:repeating-linear-gradient(45deg,#eef0f4 0 3px,#dde1e7 3px 6px);border-color:#dde1e7}
+.c-flex{box-shadow:inset 0 -8px 0 var(--yellow)}
+.legend span{display:inline-flex;align-items:center;gap:8px;margin:0 18px 8px 0;font-size:14px;color:var(--ink-soft)}
+.legend i{width:16px;height:16px;display:inline-block;border:1px solid #e6e9ee}
+.hidden{display:none!important}
+@media (max-width:600px){ h1{font-size:28px} .big{font-size:42px} main{padding:20px 16px 48px} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand"><small>King's College School</small><span>Time off</span></div>
+    <nav class="tabs" id="tabs" aria-label="Main"></nav>
+    <div class="who" id="who"></div>
+  </div>
+</header>
+<main id="app"><p class="muted">Loading...</p></main>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+// ============================================================
+// Settings: paste your project's details here (see SETUP.md)
+// ============================================================
+const SUPABASE_URL = 'https://zpwerwzekpbnulhgjkvt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_n4j5lYRyyjm-o6FkJiKhaw_FOVMU2Tq';
+const ALLOWED_EMAIL_DOMAIN = 'kcs.org.uk';   // sign-in links are only offered to this domain
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { db: { schema: 'timeoff' } });
+
+// ============================================================
+// Small helpers
+// ============================================================
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (n) => { n = Number(n) || 0; return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100); };
+const plural = (n, one, many) => num(n) + ' ' + (Number(n) === 1 ? one : many);
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const toDate = (iso) => new Date(iso + 'T12:00:00Z');
+const iso = (d) => d.toISOString().slice(0, 10);
+const todayIso = () => { const d = new Date(); return iso(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12))); };
+const addDays = (s, n) => { const d = toDate(s); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+const ord = (n) => n + ([11,12,13].includes(n) ? 'th' : ({1:'st',2:'nd',3:'rd'}[n % 10] || 'th'));
+function fmtDate(s, withYear) {
+  const d = toDate(s);
+  return DAYS[d.getUTCDay()] + ' ' + ord(d.getUTCDate()) + ' ' + MONTHS[d.getUTCMonth()] + (withYear ? ' ' + d.getUTCFullYear() : '');
+}
+function fmtRange(a, b) {
+  if (a === b) return fmtDate(a);
+  return fmtDate(a) + ' to ' + fmtDate(b);
+}
+const leaveYear = (s) => { const d = toDate(s); return d.getUTCMonth() >= 7 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; };
+const yearLabel = (y) => y + '-' + String((y + 1) % 100).padStart(2, '0');
+const isWeekday = (s) => { const w = toDate(s).getUTCDay(); return w > 0 && w < 6; };
+
+// ============================================================
+// State
+// ============================================================
+const S = {
+  me: null, view: 'home', month: null,
+  staff: [], links: [], requests: [], hours: [], sickness: [], adjustments: [], decisions: [],
+  terms: [], bankHolidays: [], directory: [], names: [], acting: new Map(), error: null
+};
+const byId = (id) => S.staff.find(p => p.id === id);
+const nameOf = (id) => byId(id)?.full_name || (S.directory.find(p => p.id === id)?.full_name) || (S.names.find(p => p.id === id)?.full_name) || 'Someone';
+const isBH = (s) => S.bankHolidays.some(b => b.day === s);
+const isTermDay = (s) => S.terms.some(t => s >= t.starts && s <= t.ends);
+function workingDays(a, b, part) {
+  if (!a || !b || b < a) return 0;
+  if (a === b && part !== 'full') return (isWeekday(a) && !isBH(a)) ? 0.5 : 0;
+  let n = 0; for (let d = a; d <= b; d = addDays(d, 1)) if (isWeekday(d) && !isBH(d)) n++;
+  return n;
+}
+const LIVE = ['pending','under_discussion','approved','cancel_requested'];
+const KIND = { annual_leave: 'Annual leave', kit: 'Keeping in touch day', term_off: 'Time off in term', flex: 'One-off flex' };
+function statusChip(st) {
+  const map = { pending: ['pending','Pending'], under_discussion: ['pending','Pending'], approved: ['approved','Approved'],
+    declined: ['declined','Declined'], cancelled: ['cancelled','Cancelled'], cancel_requested: ['pending','Cancellation pending'] };
+  const [c, t] = map[st] || ['cancelled', st];
+  return `<span class="chip ${c}">${t}</span>`;
+}
+
+// Who I approve for (including as a deputy) comes from the server
+const actingFor = (staffId) => S.acting.get(staffId) || null;
+function myTeam() {
+  if (S.me.is_admin) return S.staff.filter(p => p.active && p.id !== S.me.id);
+  const ids = new Set(S.links.filter(l => l.other_id === S.me.id).map(l => l.staff_id));
+  S.staff.forEach(p => { if (p.id !== S.me.id && actingFor(p.id)) ids.add(p.id); });
+  return S.staff.filter(p => ids.has(p.id) && p.active);
+}
+
+// ============================================================
+// Allowances and pace
+// ============================================================
+function adj(staffId, yr, kind) {
+  return S.adjustments.filter(a => a.staff_id === staffId && a.leave_year === yr && a.kind === kind)
+    .reduce((t, a) => t + Number(a.amount), 0);
+}
+function leaveSummary(p, yr) {
+  const allowance = Number(p.leave_days) + adj(p.id, yr, 'leave_days');
+  const reqs = S.requests.filter(r => r.staff_id === p.id && r.kind === 'annual_leave' && leaveYear(r.start_date) === yr && LIVE.includes(r.status));
+  const approved = reqs.filter(r => r.status === 'approved' || r.status === 'cancel_requested').reduce((t, r) => t + Number(r.days), 0);
+  const waiting = reqs.filter(r => r.status === 'pending' || r.status === 'under_discussion').reduce((t, r) => t + Number(r.days), 0);
+  return { allowance, approved, waiting, booked: approved + waiting, left: allowance - approved - waiting };
+}
+function hoursSummary(p, yr) {
+  const target = Number(p.extra_hours) + adj(p.id, yr, 'extra_hours');
+  const rows = S.hours.filter(h => h.staff_id === p.id && leaveYear(h.work_date) === yr);
+  const approved = rows.filter(h => h.status === 'approved').reduce((t, h) => t + Number(h.hours), 0);
+  const waiting = rows.filter(h => h.status === 'pending').reduce((t, h) => t + Number(h.hours), 0);
+  return { target, approved, waiting, logged: approved + waiting, left: Math.max(0, target - approved - waiting) };
+}
+// Fraction of the year (from 1st August) that has passed
+function yearFraction(yr) {
+  const start = Date.UTC(yr, 7, 1), end = Date.UTC(yr + 1, 7, 1), now = toDate(todayIso()).getTime();
+  return Math.min(1, Math.max(0, (now - start) / (end - start)));
+}
+// Matter-of-fact pace: projected position counts anything already booked
+function pace(used, total, yr) {
+  if (!total) return 'On track';
+  const f = yearFraction(yr), expected = total * f;
+  const monthsIn = Math.floor(f * 12);
+  if (used > expected + total * 0.25) return 'Ahead of pace';
+  if (monthsIn >= 6 && used < expected * 0.5) return 'Behind pace';
+  return 'On track';
+}
+
+// ============================================================
+// Loading data
+// ============================================================
+async function loadAll() {
+  const q = (t, order) => sb.from(t).select('*').order(order || 'id');
+  const res = await Promise.all([
+    q('staff', 'full_name'), q('links'), q('requests', 'start_date'), q('hours_entries', 'work_date'),
+    q('sickness', 'start_date'), q('adjustments'), q('decisions'), q('term_dates', 'starts'), q('bank_holidays', 'day')
+  ]);
+  const err = res.find(r => r.error);
+  if (err) throw err.error;
+  [S.staff, S.links, S.requests, S.hours, S.sickness, S.adjustments, S.decisions, S.terms, S.bankHolidays] = res.map(r => r.data);
+  const [ac, nm] = await Promise.all([sb.rpc('my_acting'), sb.rpc('colleague_names')]);
+  if (ac.error) throw ac.error;
+  S.acting = new Map((ac.data || []).map(r => [r.staff_id, r.acting_for]));
+  S.names = nm.data || [];
+  if (S.me.is_admin || S.me.is_sickness_logger) {
+    const d = await sb.rpc('staff_directory');
+    S.directory = d.data || [];
+  }
+}
+async function refresh() {
+  try {
+    const p = await sb.rpc('claim_profile');
+    if (p.error) throw p.error;
+    S.me = p.data;
+    if (!S.me) return renderNotSetUp();
+    await loadAll();
+    S.error = null;
+  } catch (e) { S.error = e.message || String(e); }
+  render();
+}
+async function call(fn, args, okMsg) {
+  const r = await sb.rpc(fn, args);
+  if (r.error) { alertBox(r.error.message); return null; }
+  closeDlg();
+  await refresh();
+  if (okMsg) flash(okMsg);
+  return r.data ?? true;
+}
+function flash(msg) {
+  const el = document.createElement('div');
+  el.className = 'banner'; el.setAttribute('role', 'status');
+  el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9;background:var(--ok-bg);color:var(--ok)';
+  el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 3500);
+}
+function alertBox(msg) {
+  const box = $('dlgBody').querySelector('.dlg-error');
+  if ($('dlg').open && box) { box.textContent = msg; box.classList.remove('hidden'); return; }
+  S.error = msg; render();
+}
+
+// ============================================================
+// Sign in
+// ============================================================
+function renderSignIn(sent) {
+  $('tabs').innerHTML = ''; $('who').innerHTML = '';
+  $('app').innerHTML = `
+  <div class="narrow card">
+    <h1>Sign in</h1>
+    ${sent ? `<p>Check your email for a sign-in link. You can close this tab and use the link.</p>` : `
+    <p class="muted">Enter your school email address and we will send you a sign-in link.</p>
+    <form id="signin">
+      <div class="field"><label for="em">Email address</label><input id="em" type="email" required autocomplete="email"></div>
+      <div id="sierr" class="error hidden"></div>
+      <button class="btn primary wide" type="submit">Send sign-in link</button>
+    </form>`}
+  </div>`;
+  if (sent) return;
+  $('signin').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = $('em').value.trim().toLowerCase();
+    if (ALLOWED_EMAIL_DOMAIN && !email.endsWith('@' + ALLOWED_EMAIL_DOMAIN)) {
+      $('sierr').textContent = 'Please use your @' + ALLOWED_EMAIL_DOMAIN + ' address.'; $('sierr').classList.remove('hidden'); return;
+    }
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (error) { $('sierr').textContent = error.message; $('sierr').classList.remove('hidden'); return; }
+    renderSignIn(true);
+  };
+}
+function renderNotSetUp() {
+  $('tabs').innerHTML = '';
+  $('who').innerHTML = `<button id="so">Sign out</button>`; $('so').onclick = signOut;
+  $('app').innerHTML = `<div class="narrow card"><h1>Not set up yet</h1>
+    <p>You have signed in, but you have not been added to the Time Off app yet. Please ask your line manager to add you, then sign in again.</p></div>`;
+}
+async function signOut() { await sb.auth.signOut(); S.me = null; renderSignIn(false); }
+
+// ============================================================
+// Layout
+// ============================================================
+function pendingForMe() {
+  const reqs = S.requests.filter(r => ['pending','under_discussion','cancel_requested'].includes(r.status)
+    && r.staff_id !== S.me.id && (actingFor(r.staff_id) || (r.status === 'cancel_requested' && S.me.is_admin)));
+  const mine = reqs.filter(r => {
+    if (r.status !== 'pending') return true;
+    const a = actingFor(r.staff_id);
+    return !S.decisions.some(d => d.request_id === r.id && d.approver_id === a);
+  });
+  const hrs = S.hours.filter(h => h.status === 'pending' && h.staff_id !== S.me.id && (actingFor(h.staff_id) || S.me.is_admin));
+  return { reqs: mine, hrs };
+}
+function render() {
+  if (!S.me) return;
+  const tabs = [['home', 'My time off']];
+  const p = pendingForMe();
+  if (S.me.is_approver || p.reqs.length || p.hrs.length) tabs.push(['approvals', `Approvals (${p.reqs.length + p.hrs.length})`]);
+  if (S.me.has_team || myTeam().length) tabs.push(['calendar', 'Team calendar']);
+  if (S.me.is_admin) { tabs.push(['team', 'Team']); tabs.push(['settings', 'Settings']); }
+  if (!tabs.some(t => t[0] === S.view)) S.view = 'home';
+  $('tabs').innerHTML = tabs.map(([k, t]) => `<button data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${t}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { S.view = b.dataset.v; render(); window.scrollTo(0, 0); });
+  $('who').innerHTML = `${esc(S.me.full_name)} <button id="so">Sign out</button>`; $('so').onclick = signOut;
+  const err = S.error ? `<div class="error" role="alert">${esc(S.error)}</div>` : '';
+  S.error = null;
+  const views = { home: viewHome, approvals: viewApprovals, calendar: viewCalendar, team: viewTeam, settings: viewSettings };
+  $('app').innerHTML = err + views[S.view]();
+  bind();
+}
+// Buttons declare what they do with data-act; one handler wires them all
+function bind() {
+  $('app').querySelectorAll('[data-act]').forEach(el => {
+    el.onclick = (e) => { e.preventDefault(); ACTIONS[el.dataset.act](el.dataset.id, el); };
+  });
+}
+
+// ============================================================
+// My time off
+// ============================================================
+function viewHome() {
+  const me = S.me, yr = leaveYear(todayIso());
+  let out = `<div class="narrow">`;
+  if (me.contract_type === 'year_round') {
+    const L = leaveSummary(me, yr);
+    const w = (x) => L.allowance ? Math.min(100, x / L.allowance * 100) : 0;
+    out += `<section class="card">
+      <div class="eyebrow">Annual leave ${yearLabel(yr)}</div>
+      <div><span class="big">${num(L.left)}</span> <span class="muted">${L.left === 1 ? 'day' : 'days'} left of ${num(L.allowance)}</span></div>
+      <div class="bar" aria-hidden="true"><div class="a" style="width:${w(L.approved)}%"></div><div class="p" style="width:${w(L.waiting)}%"></div></div>
+      <span class="key"><i style="background:var(--blue)"></i>${num(L.approved)} approved</span>
+      <span class="key"><i style="background:#9fb0cc"></i>${num(L.waiting)} waiting</span>
+      <p class="small muted" style="margin:8px 0 0">${pace(L.booked, L.allowance, yr)}. Your leave resets on 1st August.</p>
+      <div style="margin-top:16px"><button class="btn primary wide" data-act="newLeave">Request leave</button></div>
+      <div class="btnrow">
+        <button class="btn" data-act="newFlex">Request one-off flex</button>
+        <button class="btn" data-act="newSick">Record sickness</button>
+        ${me.kit_from ? `<button class="btn" data-act="newKit">Request a KIT day</button>` : ''}
+      </div>
+    </section>`;
+  } else {
+    const H = hoursSummary(me, yr);
+    const w = (x) => H.target ? Math.min(100, x / H.target * 100) : 0;
+    out += `<section class="card">
+      <div class="eyebrow">Extra hours ${yearLabel(yr)}</div>
+      <div><span class="big">${num(H.logged)}</span> <span class="muted">of ${num(H.target)} hours logged</span></div>
+      <div class="bar" aria-hidden="true"><div class="a" style="width:${w(H.approved)}%"></div><div class="p" style="width:${w(H.waiting)}%"></div></div>
+      <span class="key"><i style="background:var(--blue)"></i>${num(H.approved)} approved</span>
+      <span class="key"><i style="background:#9fb0cc"></i>${num(H.waiting)} waiting</span>
+      <p class="small muted" style="margin:8px 0 0">${pace(H.logged, H.target, yr)}. ${num(H.left)} hours still to plan before 31st July.</p>
+      <div style="margin-top:16px"><button class="btn primary wide" data-act="newHours">Log hours</button></div>
+      <div class="btnrow">
+        <button class="btn" data-act="newTermOff">Time off in term</button>
+        <button class="btn" data-act="newFlex">Request one-off flex</button>
+        <button class="btn" data-act="newSick">Record sickness</button>
+        ${me.kit_from ? `<button class="btn" data-act="newKit">Request a KIT day</button>` : ''}
+      </div>
+    </section>`;
+  }
+  if (me.kit_from) {
+    const used = S.requests.filter(r => r.staff_id === me.id && r.kind === 'kit' && r.start_date >= me.kit_from && LIVE.includes(r.status))
+      .reduce((t, r) => t + Number(r.days), 0);
+    out += `<section class="card"><div class="eyebrow">Keeping in touch days</div>
+      <p style="margin:6px 0 0">${num(used)} of ${num(me.kit_allowance)} used. Any work on a day counts as a whole KIT day.</p></section>`;
+  }
+  if (me.is_sickness_logger || me.is_admin) {
+    out += `<section class="card"><h2>For colleagues</h2><button class="btn" data-act="newSickFor">Record sickness for a colleague</button></section>`;
+  }
+  // My requests
+  const mine = S.requests.filter(r => r.staff_id === me.id).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  out += `<section class="card"><h2>Your requests</h2>`;
+  if (!mine.length) out += `<p class="muted">Nothing yet.</p>`;
+  out += `<div class="list">` + mine.slice(0, 30).map(r => {
+    const detail = r.kind === 'flex' ? plural(r.hours, 'hour', 'hours') + ' away'
+      : r.part !== 'full' ? 'Half day (' + (r.part === 'am' ? 'morning' : 'afternoon') + ')' : plural(r.days, 'day', 'days');
+    const canCancel = ['pending','under_discussion','approved'].includes(r.status) && r.end_date >= todayIso();
+    return `<div class="item"><div><div>${esc(fmtRange(r.start_date, r.end_date))}</div>
+      <div class="small muted">${KIND[r.kind]} · ${detail}${r.status === 'approved' && r.treatment ? ' · ' + treatLabel(r.treatment) : ''}</div>
+      ${canCancel ? `<a href="#" class="small" data-act="cancelReq" data-id="${r.id}">Cancel</a>` : ''}</div>${statusChip(r.status)}</div>`;
+  }).join('') + `</div></section>`;
+  // My hours
+  if (me.contract_type === 'term_time_plus') {
+    const hrs = S.hours.filter(h => h.staff_id === me.id).sort((a, b) => b.work_date.localeCompare(a.work_date));
+    out += `<section class="card"><h2>Recent hours</h2>${hrs.length ? '' : '<p class="muted">Nothing logged yet.</p>'}<div class="list">` +
+      hrs.slice(0, 30).map(h => `<div class="item"><div><div>${esc(fmtDate(h.work_date))} · ${plural(h.hours, 'hour', 'hours')}</div>
+        <div class="small muted">${esc(h.description)}</div>${h.term_day ? '<span class="tag">Term day</span>' : ''}</div>${statusChip(h.status)}</div>`).join('') +
+      `</div></section>`;
+  }
+  const sick = S.sickness.filter(k => k.staff_id === me.id).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  if (sick.length) {
+    out += `<section class="card"><h2>Sickness recorded</h2><div class="list">` + sick.slice(0, 20).map(k =>
+      `<div class="item"><div>${esc(fmtRange(k.start_date, k.end_date))}${k.part !== 'full' ? ' (half day)' : ''}</div></div>`).join('') + `</div></section>`;
+  }
+  return out + `</div>`;
+}
+const treatLabel = (t) => ({ unpaid: 'Unpaid', made_up: 'Made up later', paid_special: 'Paid special leave' }[t] || '');
+
+// ============================================================
+// Forms (dialogs)
+// ============================================================
+function openDlg(html, onSubmit) {
+  $('dlgBody').innerHTML = html + `<div class="dlg-error error hidden" role="alert"></div>`;
+  $('dlg').showModal();
+  const f = $('dlgBody').querySelector('form');
+  f.onsubmit = async (e) => { e.preventDefault(); const b = f.querySelector('[type=submit]'); b.disabled = true; await onSubmit(f); b.disabled = false; };
+  f.querySelector('[data-close]')?.addEventListener('click', (e) => { e.preventDefault(); closeDlg(); });
+  return f;
+}
+function closeDlg() { if ($('dlg').open) $('dlg').close(); }
+const formEnd = (label) => `<div class="btnrow"><button class="btn" data-close>Back</button><button class="btn primary" type="submit">${label}</button></div>`;
+const dateRangeFields = (withPart) => `
+  <div class="row2"><div class="field"><label for="fs">From</label><input id="fs" name="s" type="date" required></div>
+  <div class="field"><label for="fe">To</label><input id="fe" name="e" type="date" required></div></div>
+  ${withPart ? `<div class="field"><label for="fp">Full or half day</label><select id="fp" name="p">
+    <option value="full">Full days</option><option value="am">Half day: morning</option><option value="pm">Half day: afternoon</option></select>
+    <span class="hint">A half day must be a single date.</span></div>` : ''}
+  <p class="small muted" id="calc" aria-live="polite"></p>`;
+function wireRange(f, show) {
+  const upd = () => {
+    if (f.s.value && (!f.e.value || f.e.value < f.s.value)) f.e.value = f.s.value;
+    if (f.p && f.p.value !== 'full') f.e.value = f.s.value;
+    $('calc').textContent = f.s.value ? show(f.s.value, f.e.value, f.p ? f.p.value : 'full') : '';
+  };
+  ['s', 'e'].forEach(k => f[k].addEventListener('change', upd)); f.p?.addEventListener('change', upd);
+}
+
+const ACTIONS = {
+  newLeave() {
+    const yr = leaveYear(todayIso()), L = leaveSummary(S.me, yr);
+    const f = openDlg(`<form><h2>Request leave</h2>${dateRangeFields(true)}
+      <div class="field"><label for="fr">Note (optional)</label><input id="fr" name="r" maxlength="200"></div>${formEnd('Send request')}</form>`,
+      (f) => call('submit_request', { p_kind: 'annual_leave', p_start: f.s.value, p_end: f.e.value, p_part: f.p.value, p_hours: null, p_reason: f.r.value }, 'Request sent'));
+    wireRange(f, (s, e, p) => {
+      const d = workingDays(s, e, p), y = leaveYear(s), left = leaveSummary(S.me, y).left;
+      return `This uses ${plural(d, 'working day', 'working days')}. ` + (d > left ? `It is more than the ${num(left)} you have left, so your approver will see it may be unpaid.` : `You would have ${num(left - d)} left.`);
+    });
+  },
+  newKit() {
+    const f = openDlg(`<form><h2>Request a keeping in touch day</h2>${dateRangeFields(true)}
+      <div class="field"><label for="fr">What the work is</label><input id="fr" name="r" maxlength="200" required></div>${formEnd('Send request')}</form>`,
+      (f) => call('submit_request', { p_kind: 'kit', p_start: f.s.value, p_end: f.e.value, p_part: f.p.value, p_hours: null, p_reason: f.r.value }, 'Request sent'));
+    wireRange(f, (s, e) => { let n = 0; for (let d = s; d <= e; d = addDays(d, 1)) if (isWeekday(d)) n++; return `This uses ${plural(n, 'KIT day', 'KIT days')}. A half day still counts as a whole KIT day.`; });
+  },
+  newTermOff() {
+    const f = openDlg(`<form><h2>Request time off in term</h2>${dateRangeFields(true)}
+      <div class="field"><label for="fr">Reason</label><input id="fr" name="r" maxlength="200" required></div>
+      <p class="small muted">Your approver will decide whether it is unpaid, made up later or paid special leave.</p>${formEnd('Send request')}</form>`,
+      (f) => call('submit_request', { p_kind: 'term_off', p_start: f.s.value, p_end: f.e.value, p_part: f.p.value, p_hours: null, p_reason: f.r.value }, 'Request sent'));
+    wireRange(f, (s, e, p) => `This covers ${plural(workingDays(s, e, p), 'working day', 'working days')}.`);
+  },
+  newFlex() {
+    openDlg(`<form><h2>Request one-off flex</h2>
+      <p class="small muted">For a single unusual day, eg leaving an hour early. It does not change your contract.</p>
+      <div class="row2"><div class="field"><label for="fd">Date</label><input id="fd" name="d" type="date" required></div>
+      <div class="field"><label for="fh">Working hours you will miss</label><input id="fh" name="h" type="number" min="0.5" max="12" step="0.5" required>
+      <span class="hint">To the nearest half hour</span></div></div>
+      <div class="field"><label for="fr">Reason</label><input id="fr" name="r" maxlength="200" required></div>${formEnd('Send request')}</form>`,
+      (f) => call('submit_request', { p_kind: 'flex', p_start: f.d.value, p_end: f.d.value, p_part: 'full', p_hours: Number(f.h.value), p_reason: f.r.value }, 'Request sent'));
+  },
+  newHours() {
+    const f = openDlg(`<form><h2>Log hours</h2>
+      <div class="row2"><div class="field"><label for="fd">Date</label><input id="fd" name="d" type="date" required></div>
+      <div class="field"><label for="fh">Hours</label><input id="fh" name="h" type="number" min="0.25" max="24" step="0.25" required></div></div>
+      <p class="small muted" id="calc"></p>
+      <div class="field"><label for="fw">What the work was</label><input id="fw" name="w" maxlength="200" required></div>
+      <p class="small muted">Enter the hours you agreed with your line manager.</p>${formEnd('Log hours')}</form>`,
+      (f) => call('submit_hours', { p_date: f.d.value, p_hours: Number(f.h.value), p_desc: f.w.value }, 'Hours logged'));
+    f.d.addEventListener('change', () => { $('calc').textContent = f.d.value && isTermDay(f.d.value) ? 'This is a term day, so it will be marked for your line manager to check against your contractual hours.' : ''; });
+  },
+  newSick() { sickForm(null); },
+  newSickFor() { sickForm(true); },
+  cancelReq(id) {
+    const r = S.requests.find(x => x.id === id);
+    const pay = r.status === 'approved' && (r.over_entitlement || r.treatment === 'unpaid');
+    openDlg(`<form><h2>Cancel this request?</h2><p>${KIND[r.kind]}: ${esc(fmtRange(r.start_date, r.end_date))}</p>
+      ${pay ? '<p class="small muted">This booking affects pay, so the cancellation will go to your approver.</p>' : ''}
+      ${formEnd('Cancel request')}</form>`, () => call('cancel_request', { p_id: id }, 'Cancelled'));
+  },
+  // approvals
+  approve(id, el) { decide(id, 'approve', el); },
+  decline(id, el) { decide(id, 'decline', el); },
+  outright(id) {
+    openDlg(`<form><h2>Decline outright?</h2><p>The request will be declined and the person told.</p>${formEnd('Decline outright')}</form>`,
+      () => call('decline_outright', { p_id: id }, 'Declined'));
+  },
+  hoursYes(id) { call('decide_hours', { p_id: id, p_approve: true }, 'Approved'); },
+  hoursNo(id) { call('decide_hours', { p_id: id, p_approve: false }, 'Declined'); },
+  // calendar
+  prevMonth() { const [y, m] = S.month.split('-').map(Number); S.month = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; render(); },
+  nextMonth() { const [y, m] = S.month.split('-').map(Number); S.month = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`; render(); },
+  ics() { downloadIcs(); },
+  // team and settings (administrators)
+  editPerson(id) { personForm(id ? byId(id) : null); },
+  addAdj(id) { adjForm(byId(id)); },
+  setStatus(id, el) {
+    const st = el.closest('tr').querySelector('select').value;
+    callAdmin(() => sb.rpc('admin_set_status', { p_id: id, p_status: st }), 'Updated');
+  },
+  setTreat(id, el) {
+    const t = el.closest('tr').querySelector('select.treat').value || null;
+    callAdmin(() => sb.from('requests').update({ treatment: t }).eq('id', id), 'Updated');
+  },
+  delSick(id) { if (confirmAct('Delete this sickness record?')) callAdmin(() => sb.from('sickness').delete().eq('id', id), 'Deleted'); },
+  delHours(id) { if (confirmAct('Delete this hours entry?')) callAdmin(() => sb.from('hours_entries').delete().eq('id', id), 'Deleted'); },
+  delAdj(id) { if (confirmAct('Delete this adjustment?')) callAdmin(() => sb.from('adjustments').delete().eq('id', id), 'Deleted'); },
+  addTerm() { termForm(); },
+  delTerm(id) { if (confirmAct('Delete these term dates?')) callAdmin(() => sb.from('term_dates').delete().eq('id', id), 'Deleted'); },
+  addBH() { bhForm(); },
+  delBH(day) { if (confirmAct('Delete this bank holiday?')) callAdmin(() => sb.from('bank_holidays').delete().eq('day', day), 'Deleted'); },
+  exportYear() { exportYear(); },
+  viewPerson(id) { S.person = id; render(); },
+  backToTeam() { S.person = null; render(); }
+};
+const confirmAct = (msg) => window.confirm(msg);
+async function callAdmin(fn, okMsg) {
+  const r = await fn();
+  if (r.error) { alertBox(r.error.message); return; }
+  closeDlg(); await refresh(); if (okMsg) flash(okMsg);
+}
+
+function sickForm(forOthers) {
+  const people = forOthers ? S.directory.filter(p => p.id !== S.me.id) : [];
+  const f = openDlg(`<form><h2>Record sickness</h2>
+    ${forOthers ? `<div class="field"><label for="fw">Colleague</label><select id="fw" name="w" required><option value="">Choose...</option>
+      ${people.map(p => `<option value="${p.id}">${esc(p.full_name)}</option>`).join('')}</select></div>` : ''}
+    ${dateRangeFields(true)}
+    <p class="small muted">Only dates are recorded, never reasons. It does not count against leave.</p>${formEnd('Record')}</form>`,
+    (f) => call('log_sickness', { p_start: f.s.value, p_end: f.e.value, p_part: f.p.value, p_for: forOthers ? f.w.value : null }, 'Recorded'));
+  wireRange(f, (s, e, p) => plural(workingDays(s, e, p), 'working day', 'working days') + '.');
+}
+
+// ============================================================
+// Approvals
+// ============================================================
+function decide(id, decision, el) {
+  const r = S.requests.find(x => x.id === id);
+  let treatment = null;
+  if (r.kind === 'term_off' && decision === 'approve' && r.status !== 'cancel_requested') {
+    const picked = el.closest('article').querySelector('input[type=radio]:checked');
+    if (!picked) { S.error = 'Choose how the time off should be treated before approving.'; render(); return; }
+    treatment = picked.value;
+  }
+  call('decide_request', { p_id: id, p_decision: decision, p_treatment: treatment },
+    decision === 'approve' ? 'Approved' : 'Declined');
+}
+function othersOff(r) {
+  // who else in the team is off on any of these days
+  const team = myTeam().filter(p => p.id !== r.staff_id).map(p => p.id);
+  const names = new Set();
+  S.requests.forEach(x => {
+    if (!team.includes(x.staff_id) || x.kind === 'flex' || !LIVE.includes(x.status)) return;
+    if (x.start_date <= r.end_date && x.end_date >= r.start_date) names.add(nameOf(x.staff_id));
+  });
+  return [...names];
+}
+function approvalCard(r) {
+  const p = byId(r.staff_id), yr = leaveYear(r.start_date);
+  const myId = actingFor(r.staff_id);
+  const mineDec = S.decisions.find(d => d.request_id === r.id && d.approver_id === myId);
+  const others = S.decisions.filter(d => d.request_id === r.id && d.approver_id !== myId);
+  let lines = [];
+  if (r.kind === 'flex') {
+    const fl = S.requests.filter(x => x.staff_id === r.staff_id && x.kind === 'flex' && x.status === 'approved' && leaveYear(x.start_date) === yr);
+    lines.push(`<span class="muted">${esc(p.full_name.split(' ')[0])}'s flex this year: ${plural(fl.length, 'request', 'requests')}, ${plural(fl.reduce((t, x) => t + Number(x.hours), 0), 'hour', 'hours')}</span>`);
+  }
+  if (r.kind === 'annual_leave') {
+    const L = leaveSummary(p, yr);
+    lines.push(`<span class="muted">${num(L.left)} days left, counting this request</span>`);
+  }
+  if (r.over_entitlement) lines.push(`<span class="tag warn">Over allowance: may need to be unpaid</span>`);
+  if (r.reason) lines.push(`<span class="muted">Reason: ${esc(r.reason)}</span>`);
+  if (r.kind !== 'flex') { const o = othersOff(r); if (o.length) lines.push(`<span class="tag warn">Overlaps with ${esc(o.join(', '))}</span>`); }
+  others.forEach(d => lines.push(`<span class="tag ${d.decision === 'approve' ? 'ok' : 'warn'}">${esc(nameOf(d.approver_id))} has ${d.decision}d. Only approvers see this.</span>`));
+  if (myId && myId !== S.me.id) lines.push(`<span class="tag">You are deputising for ${esc(nameOf(myId))}</span>`);
+
+  const what = r.kind === 'flex' ? plural(r.hours, 'hour', 'hours') + ' away'
+    : r.part !== 'full' ? 'half day (' + (r.part === 'am' ? 'morning' : 'afternoon') + ')' : plural(r.days, 'day', 'days');
+  let controls;
+  if (r.status === 'cancel_requested') {
+    lines.unshift(`<span class="tag warn">Asking to cancel an approved booking that affects pay</span>`);
+    controls = `<button class="btn" data-act="decline" data-id="${r.id}">Keep the booking</button><button class="btn primary" data-act="approve" data-id="${r.id}">Approve cancellation</button>`;
+  } else if (r.status === 'under_discussion') {
+    lines.unshift(`<span class="tag warn">Under discussion: talk to the other approver, then change your decision or decline outright</span>`);
+    controls = (mineDec?.decision === 'decline' ? `<button class="btn primary" data-act="approve" data-id="${r.id}">Change my decision to approve</button>`
+      : !mineDec ? `<button class="btn primary" data-act="approve" data-id="${r.id}">Approve</button>` : '')
+      + `<button class="btn" data-act="outright" data-id="${r.id}">Decline outright</button>`;
+  } else {
+    controls = `<button class="btn" data-act="decline" data-id="${r.id}">Decline</button><button class="btn primary" data-act="approve" data-id="${r.id}">Approve</button>`;
+  }
+  const treat = r.kind === 'term_off' && r.status !== 'cancel_requested' ? `<fieldset><legend>If approved, treat as</legend>
+    <label class="radio"><input type="radio" name="t-${r.id}" value="unpaid"><span>Unpaid<br><span class="small muted">Flagged in the year-end summary for payroll</span></span></label>
+    ${p.contract_type === 'term_time_plus' ? `<label class="radio"><input type="radio" name="t-${r.id}" value="made_up"><span>Made up later<br><span class="small muted">Adds ${num(r.days * p.day_hours)} hours to the year's target</span></span></label>` : ''}
+    <label class="radio"><input type="radio" name="t-${r.id}" value="paid_special"><span>Paid special leave<br><span class="small muted">No effect on pay or hours</span></span></label></fieldset>` : '';
+  return `<article class="card"><div class="req"><div class="info">
+      <span class="eyebrow">${esc(p.full_name)} · ${KIND[r.kind]}</span>
+      <span class="title">${esc(fmtRange(r.start_date, r.end_date))} · ${what}</span>${lines.join('')}</div>
+      ${treat ? '' : `<div class="btnrow" style="margin:0">${controls}</div>`}</div>
+      ${treat ? treat + `<div class="btnrow" style="justify-content:flex-end">${controls}</div>` : ''}</article>`;
+}
+function viewApprovals() {
+  const { reqs, hrs } = pendingForMe();
+  let out = `<div class="cols"><div class="main"><h1>Waiting for you</h1>
+    <p class="muted">${reqs.length + hrs.length ? plural(reqs.length + hrs.length, 'item', 'items') + ', oldest first.' : 'Nothing is waiting for you.'}</p>`;
+  const items = [...reqs.map(r => ({ t: r.created_at, html: approvalCard(r) })),
+    ...hrs.map(h => ({ t: h.created_at, html: `<article class="card"><div class="req"><div class="info">
+      <span class="eyebrow">${esc(nameOf(h.staff_id))} · Extra hours</span>
+      <span class="title">${esc(fmtDate(h.work_date))} · ${plural(h.hours, 'hour', 'hours')}</span>
+      <span class="muted">${esc(h.description)}</span>${h.term_day ? '<span class="tag">Term day: check against contractual hours</span>' : ''}</div>
+      <div class="btnrow" style="margin:0"><button class="btn" data-act="hoursNo" data-id="${h.id}">Decline</button>
+      <button class="btn primary" data-act="hoursYes" data-id="${h.id}">Approve</button></div></div></article>` }))]
+    .sort((a, b) => a.t.localeCompare(b.t));
+  out += items.map(i => i.html).join('');
+  // waiting on someone else
+  const waiting = S.requests.filter(r => r.status === 'pending' && actingFor(r.staff_id) && !reqs.includes(r));
+  if (waiting.length) out += `<h2 style="margin-top:28px">Waiting for another approver</h2><div class="card list">` + waiting.map(r =>
+    `<div class="item"><div>${esc(nameOf(r.staff_id))} · ${KIND[r.kind]}<br><span class="small muted">${esc(fmtRange(r.start_date, r.end_date))}</span></div><span class="chip pending">Pending</span></div>`).join('') + `</div>`;
+  out += `</div><aside class="side card"><h2>Team at a glance</h2><div class="list">`;
+  const yr = leaveYear(todayIso());
+  out += myTeam().map(p => {
+    let line, pc;
+    if (p.contract_type === 'year_round') { const L = leaveSummary(p, yr); line = `${num(L.left)} of ${num(L.allowance)} days left`; pc = pace(L.booked, L.allowance, yr); }
+    else { const H = hoursSummary(p, yr); line = `${num(H.logged)} of ${num(H.target)} hours logged`; pc = pace(H.logged, H.target, yr); }
+    return `<div class="item"><div><div>${esc(p.full_name)}</div><div class="small muted">${line}</div></div>
+      <span class="${pc === 'On track' ? 'small muted' : 'tag'}">${pc}</span></div>`;
+  }).join('') + `</div>${S.me.is_admin ? '<p><a href="#" data-act="exportYear">Download year-end summary</a></p>' : ''}</aside></div>`;
+  return out;
+}
+
+// ============================================================
+// Team calendar
+// ============================================================
+function monthDays(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const out = []; for (let d = iso(new Date(Date.UTC(y, m - 1, 1, 12))); toDate(d).getUTCMonth() === m - 1; d = addDays(d, 1)) if (isWeekday(d)) out.push(d);
+  return out;
+}
+function cellFor(pid, d) {
+  const sick = S.sickness.find(k => k.staff_id === pid && d >= k.start_date && d <= k.end_date);
+  if (sick) return ['c-absent', 'Absent'];
+  const r = S.requests.find(x => x.staff_id === pid && x.kind !== 'flex' && LIVE.includes(x.status) && d >= x.start_date && d <= x.end_date);
+  if (r && !isBH(d)) {
+    if (r.status === 'pending' || r.status === 'under_discussion') return ['c-pending', KIND[r.kind] + ', waiting for approval'];
+    if (r.part !== 'full') return ['c-half', KIND[r.kind] + ', half day'];
+    return ['c-leave', KIND[r.kind]];
+  }
+  if (isBH(d)) return ['c-bh', 'Bank holiday'];
+  const h = S.hours.find(x => x.staff_id === pid && x.work_date === d && x.status !== 'declined');
+  const fl = S.requests.find(x => x.staff_id === pid && x.kind === 'flex' && LIVE.includes(x.status) && x.start_date === d);
+  const cls = (h ? 'c-hours' : isTermDay(d) ? 'c-term' : '') + (fl ? ' c-flex' : '');
+  const lab = [h ? 'Working extra hours' : '', fl ? 'One-off flex (' + plural(fl.hours, 'hour', 'hours') + ' away)' : ''].filter(Boolean).join(', ');
+  return [cls, lab];
+}
+function viewCalendar() {
+  if (!S.month) S.month = todayIso().slice(0, 7);
+  const [y, m] = S.month.split('-').map(Number);
+  const days = monthDays(S.month), people = myTeam();
+  const offOn = {};
+  days.forEach(d => people.forEach(p => { const [c] = cellFor(p.id, d); if (/c-(leave|pending|half|absent)/.test(c)) (offOn[d] = offOn[d] || []).push(p.full_name); }));
+  const clashes = Object.entries(offOn).filter(([, n]) => n.length > 1);
+  let out = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:14px"><a href="#" data-act="prevMonth" aria-label="Previous month">Previous</a>
+      <h1 style="margin:0">${MONTHS[m - 1]} ${y}</h1><a href="#" data-act="nextMonth" aria-label="Next month">Next</a></div>
+    <div class="btnrow" style="margin:0"><button class="btn" data-act="ics">Download calendar file</button></div></div>`;
+  out += clashes.map(([d, n]) => `<div class="banner">${n.length} people are off on ${esc(fmtDate(d))}: ${esc(n.join(', '))}.</div>`).join('');
+  out += `<div class="card scroll"><div class="cal" style="grid-template-columns:130px repeat(${days.length},minmax(0,1fr))"><span></span>` +
+    days.map(d => `<div class="hd"><span>${DAYS[toDate(d).getUTCDay()][0]}</span><b>${toDate(d).getUTCDate()}</b></div>`).join('') +
+    people.map(p => `<span class="nm">${esc(p.full_name)}</span>` + days.map(d => {
+      const [c, l] = cellFor(p.id, d); return `<div class="cell ${c}" title="${esc(p.full_name + ', ' + fmtDate(d) + (l ? ': ' + l : ''))}"></div>`;
+    }).join('')).join('') + `</div>
+    <p class="small muted" style="margin:14px 0 0">Weekends are hidden. Lightly shaded days are term time. Sickness shows only as "Absent".</p></div>
+    <div class="legend"><span><i class="c-leave"></i>Leave</span><span><i class="c-pending"></i>Waiting for approval</span>
+    <span><i class="c-half"></i>Half day</span><span><i class="c-hours"></i>Working extra hours</span><span><i class="c-absent"></i>Absent</span>
+    <span><i class="c-flex"></i>One-off flex</span><span><i class="c-bh"></i>Bank holiday</span></div>`;
+  if (!people.length) out += `<p class="muted">Nobody is linked to you yet.</p>`;
+  return out;
+}
+function downloadIcs() {
+  const team = new Set(myTeam().map(p => p.id));
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const ev = [];
+  S.requests.filter(r => team.has(r.staff_id) && r.status === 'approved' && r.kind !== 'flex').forEach(r => {
+    ev.push(['tor-' + r.id, r.start_date, addDays(r.end_date, 1), nameOf(r.staff_id) + ': ' + KIND[r.kind] + (r.part !== 'full' ? ' (half day)' : '')]);
+  });
+  S.sickness.filter(k => team.has(k.staff_id)).forEach(k => ev.push(['tos-' + k.id, k.start_date, addDays(k.end_date, 1), nameOf(k.staff_id) + ': Absent']));
+  S.requests.filter(r => team.has(r.staff_id) && r.status === 'approved' && r.kind === 'flex').forEach(r =>
+    ev.push(['tof-' + r.id, r.start_date, addDays(r.start_date, 1), nameOf(r.staff_id) + ': One-off flex (' + plural(r.hours, 'hour', 'hours') + ' away)']));
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Kings College School//Time Off//EN', 'X-WR-CALNAME:Team time off'];
+  ev.forEach(([uid, s, e, t]) => lines.push('BEGIN:VEVENT', 'UID:' + uid + '@timeoff', 'DTSTAMP:' + stamp,
+    'DTSTART;VALUE=DATE:' + s.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + e.replace(/-/g, ''),
+    'SUMMARY:' + t.replace(/[,;]/g, ' '), 'TRANSP:TRANSPARENT', 'END:VEVENT'));
+  lines.push('END:VCALENDAR');
+  saveFile('team-time-off.ics', lines.join('\r\n'), 'text/calendar');
+}
+function saveFile(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ============================================================
+// Team (administrators)
+// ============================================================
+function viewTeam() {
+  if (S.person) return viewPerson(byId(S.person));
+  const yr = leaveYear(todayIso());
+  return `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
+    <h1 style="margin:0">Team</h1><div class="btnrow" style="margin:0"><button class="btn" data-act="exportYear">Year-end summary</button>
+    <button class="btn primary" data-act="editPerson">Add a person</button></div></div>
+    <div class="card scroll"><table class="data"><thead><tr><th>Name</th><th>Contract</th><th>This year</th><th>Approvers</th><th></th></tr></thead><tbody>` +
+    S.staff.map(p => {
+      const now = p.contract_type === 'year_round' ? (() => { const L = leaveSummary(p, yr); return `${num(L.left)} of ${num(L.allowance)} days left`; })()
+        : (() => { const H = hoursSummary(p, yr); return `${num(H.logged)} of ${num(H.target)} hours`; })();
+      const ap = S.links.filter(l => l.staff_id === p.id && l.role === 'approver').map(l => esc(nameOf(l.other_id))).join(', ') || '<span class="muted">Administrators</span>';
+      return `<tr><td><a href="#" data-act="viewPerson" data-id="${p.id}">${esc(p.full_name)}</a>${p.active ? '' : ' <span class="tag">Inactive</span>'}${p.is_admin ? ' <span class="tag">Admin</span>' : ''}<br><span class="small muted">${esc(p.email)}</span></td>
+        <td>${p.contract_type === 'year_round' ? 'Year-round' : 'Term time plus'}</td><td>${now}</td><td>${ap}</td>
+        <td><a href="#" data-act="editPerson" data-id="${p.id}">Edit</a></td></tr>`;
+    }).join('') + `</tbody></table></div>`;
+}
+function viewPerson(p) {
+  if (!p) { S.person = null; return viewTeam(); }
+  const yr = leaveYear(todayIso());
+  const reqs = S.requests.filter(r => r.staff_id === p.id).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const hrs = S.hours.filter(h => h.staff_id === p.id).sort((a, b) => b.work_date.localeCompare(a.work_date));
+  const sick = S.sickness.filter(k => k.staff_id === p.id).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const adjs = S.adjustments.filter(a => a.staff_id === p.id).sort((a, b) => b.leave_year - a.leave_year);
+  const statusSel = (r) => `<select aria-label="Status">${['pending','approved','declined','cancelled'].map(s => `<option value="${s}" ${(r.status === s || (s === 'pending' && r.status === 'under_discussion')) ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>`;
+  return `<p><a href="#" data-act="backToTeam">Back to team</a></p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
+    <h1 style="margin:0">${esc(p.full_name)}</h1><div class="btnrow" style="margin:0"><button class="btn" data-act="addAdj" data-id="${p.id}">Add an adjustment</button>
+    <button class="btn primary" data-act="editPerson" data-id="${p.id}">Edit details</button></div></div>
+    <div class="card scroll"><h2>Requests</h2>${reqs.length ? `<table class="data"><thead><tr><th>Type</th><th>Dates</th><th>Amount</th><th>Treatment</th><th>Status</th><th></th></tr></thead><tbody>` +
+      reqs.map(r => `<tr><td>${KIND[r.kind]}</td><td>${esc(fmtRange(r.start_date, r.end_date))}${r.reason ? `<br><span class="small muted">${esc(r.reason)}</span>` : ''}</td>
+        <td>${r.kind === 'flex' ? plural(r.hours, 'hour', 'hours') : plural(r.days, 'day', 'days')}${r.over_entitlement ? '<br><span class="tag warn">Over allowance</span>' : ''}</td>
+        <td>${r.kind === 'term_off' ? `<select class="treat" aria-label="Treatment"><option value="">Not set</option>${['unpaid','made_up','paid_special'].filter(t => t !== 'made_up' || p.contract_type === 'term_time_plus').map(t => `<option value="${t}" ${r.treatment === t ? 'selected' : ''}>${treatLabel(t)}</option>`).join('')}</select> <a href="#" class="small" data-act="setTreat" data-id="${r.id}">Save</a>` : ''}</td>
+        <td>${statusSel(r)}</td><td><a href="#" data-act="setStatus" data-id="${r.id}">Save</a></td></tr>`).join('') + `</tbody></table>
+      <p class="small muted">Changing a status emails ${esc(p.full_name.split(' ')[0])}.</p>` : '<p class="muted">None.</p>'}</div>
+    ${p.contract_type === 'term_time_plus' ? `<div class="card scroll"><h2>Extra hours</h2>${hrs.length ? `<table class="data"><thead><tr><th>Date</th><th>Hours</th><th>Work</th><th>Status</th><th></th></tr></thead><tbody>` +
+      hrs.map(h => `<tr><td>${esc(fmtDate(h.work_date, true))}${h.term_day ? ' <span class="tag">Term day</span>' : ''}</td><td>${num(h.hours)}</td><td>${esc(h.description)}</td><td>${statusChip(h.status)}</td>
+      <td>${h.status === 'pending' ? `<a href="#" data-act="hoursYes" data-id="${h.id}">Approve</a> · <a href="#" data-act="hoursNo" data-id="${h.id}">Decline</a> · ` : ''}<a href="#" data-act="delHours" data-id="${h.id}">Delete</a></td></tr>`).join('') + `</tbody></table>` : '<p class="muted">None.</p>'}</div>` : ''}
+    <div class="card scroll"><h2>Sickness</h2>${sick.length ? `<table class="data"><tbody>` + sick.map(k => `<tr><td>${esc(fmtRange(k.start_date, k.end_date))}${k.part !== 'full' ? ' (half day)' : ''}</td><td class="small muted">Recorded by ${esc(nameOf(k.logged_by))}</td><td><a href="#" data-act="delSick" data-id="${k.id}">Delete</a></td></tr>`).join('') + `</tbody></table>` : '<p class="muted">None.</p>'}</div>
+    <div class="card scroll"><h2>Adjustments</h2>${adjs.length ? `<table class="data"><tbody>` + adjs.map(a => `<tr><td>${yearLabel(a.leave_year)}</td><td>${Number(a.amount) > 0 ? '+' : ''}${num(a.amount)} ${a.kind === 'leave_days' ? 'leave days' : 'extra hours'}</td><td>${esc(a.note || '')}</td><td>${a.request_id ? '' : `<a href="#" data-act="delAdj" data-id="${a.id}">Delete</a>`}</td></tr>`).join('') + `</tbody></table>` : '<p class="muted">None.</p>'}</div>`;
+}
+function personForm(p) {
+  const others = S.staff.filter(x => !p || x.id !== p.id);
+  const linked = (role) => new Set(p ? S.links.filter(l => l.staff_id === p.id && l.role === role).map(l => l.other_id) : []);
+  const picks = (role, label) => `<fieldset><legend>${label}</legend>${others.length ? others.map(o => `<label class="check"><input type="checkbox" name="${role}" value="${o.id}" ${linked(role).has(o.id) ? 'checked' : ''}>${esc(o.full_name)}</label>`).join('') : '<span class="small muted">Add other people first.</span>'}</fieldset>`;
+  const v = (k, d) => esc(p ? (p[k] ?? '') : d);
+  openDlg(`<form><h2>${p ? 'Edit ' + esc(p.full_name) : 'Add a person'}</h2>
+    <div class="field"><label for="pn">Full name</label><input id="pn" name="full_name" required value="${v('full_name', '')}"></div>
+    <div class="field"><label for="pe">School email</label><input id="pe" name="email" type="email" required value="${v('email', '')}"></div>
+    <div class="field"><label for="pc">Contract</label><select id="pc" name="contract_type">
+      <option value="year_round" ${p?.contract_type === 'year_round' ? 'selected' : ''}>Year-round (annual leave)</option>
+      <option value="term_time_plus" ${p?.contract_type === 'term_time_plus' ? 'selected' : ''}>Term time plus (extra hours)</option></select></div>
+    <div class="row2"><div class="field"><label for="pl">Leave days a year</label><input id="pl" name="leave_days" type="number" step="0.5" min="0" value="${v('leave_days', 0)}"></div>
+    <div class="field"><label for="ph">Extra hours a year</label><input id="ph" name="extra_hours" type="number" step="0.5" min="0" value="${v('extra_hours', 0)}"></div></div>
+    <div class="row2"><div class="field"><label for="pd">Working day (hours)</label><input id="pd" name="day_hours" type="number" step="0.25" min="1" value="${v('day_hours', 7.5)}"></div>
+    <div class="field"><label for="pk">On maternity leave from</label><input id="pk" name="kit_from" type="date" value="${v('kit_from', '')}"><span class="hint">Leave blank unless on maternity leave (turns on KIT days)</span></div></div>
+    ${picks('approver', 'Approvers (all must approve)')}
+    ${picks('line_manager', 'Line managers (see sickness)')}
+    ${picks('copied', 'Copied in for information')}
+    <fieldset><legend>Access</legend>
+      <label class="check"><input type="checkbox" name="is_admin" ${p?.is_admin ? 'checked' : ''}>Administrator (can see and edit everything)</label>
+      <label class="check"><input type="checkbox" name="is_sickness_logger" ${p?.is_sickness_logger ? 'checked' : ''}>Can record sickness for colleagues</label>
+      <label class="check"><input type="checkbox" name="active" ${!p || p.active ? 'checked' : ''}>Active</label></fieldset>
+    <fieldset><legend>When this person is away</legend>
+      <label class="check"><input type="checkbox" name="away" ${p?.away ? 'checked' : ''}>Away: their deputy approves instead</label>
+      <div class="field" style="margin-top:8px"><label for="pdep">Deputy approver</label><select id="pdep" name="deputy_id"><option value="">None</option>
+      ${others.map(o => `<option value="${o.id}" ${p?.deputy_id === o.id ? 'selected' : ''}>${esc(o.full_name)}</option>`).join('')}</select></div></fieldset>
+    ${formEnd('Save')}</form>`, async (f) => {
+      const row = {
+        full_name: f.full_name.value.trim(), email: f.email.value.trim().toLowerCase(), contract_type: f.contract_type.value,
+        leave_days: Number(f.leave_days.value) || 0, extra_hours: Number(f.extra_hours.value) || 0, day_hours: Number(f.day_hours.value) || 7.5,
+        kit_from: f.kit_from.value || null, is_admin: f.is_admin.checked, is_sickness_logger: f.is_sickness_logger.checked,
+        active: f.active.checked, away: f.away.checked, deputy_id: f.deputy_id.value || null
+      };
+      if (p && p.id === S.me.id && !row.is_admin) { alertBox('You cannot remove your own administrator access.'); return; }
+      const r = p ? await sb.from('staff').update(row).eq('id', p.id).select().single() : await sb.from('staff').insert(row).select().single();
+      if (r.error) { alertBox(r.error.message.includes('duplicate') ? 'Someone with that email address already exists.' : r.error.message); return; }
+      const id = r.data.id;
+      const want = [];
+      ['approver', 'line_manager', 'copied'].forEach(role => f.querySelectorAll(`input[name=${role}]:checked`).forEach(c => want.push({ staff_id: id, other_id: c.value, role })));
+      const del = await sb.from('links').delete().eq('staff_id', id);
+      if (del.error) { alertBox(del.error.message); return; }
+      if (want.length) { const ins = await sb.from('links').insert(want); if (ins.error) { alertBox(ins.error.message); return; } }
+      closeDlg(); await refresh(); flash('Saved');
+    });
+}
+function adjForm(p) {
+  const yr = leaveYear(todayIso());
+  openDlg(`<form><h2>Adjustment for ${esc(p.full_name)}</h2>
+    <p class="small muted">Use this for carry-over agreed with HR, or any other change to this year's allowance. Use a minus sign to reduce it.</p>
+    <div class="row2"><div class="field"><label for="ak">What</label><select id="ak" name="k">
+      <option value="leave_days" ${p.contract_type === 'year_round' ? 'selected' : ''}>Leave days</option>
+      <option value="extra_hours" ${p.contract_type === 'term_time_plus' ? 'selected' : ''}>Extra hours</option></select></div>
+    <div class="field"><label for="ay">Year</label><select id="ay" name="y"><option value="${yr}">${yearLabel(yr)}</option><option value="${yr + 1}">${yearLabel(yr + 1)}</option></select></div></div>
+    <div class="row2"><div class="field"><label for="aa">Amount</label><input id="aa" name="a" type="number" step="0.5" required></div>
+    <div class="field"><label for="an">Note</label><input id="an" name="n" maxlength="200" placeholder="eg Carry-over agreed with HR"></div></div>
+    ${formEnd('Add')}</form>`, (f) => callAdmin(() => sb.from('adjustments').insert({
+      staff_id: p.id, leave_year: Number(f.y.value), kind: f.k.value, amount: Number(f.a.value), note: f.n.value || null, created_by: S.me.id }), 'Added'));
+}
+async function exportYear() {
+  const yr = leaveYear(todayIso());
+  const r = await sb.rpc('year_summary', { yr });
+  if (r.error) { alertBox(r.error.message); return; }
+  const head = ['Name','Contract','Leave allowance (days)','Leave taken (days)','Unpaid or over allowance (days)','Extra hours due','Extra hours approved','Sickness (working days)','One-off flex (count)','One-off flex (hours)','KIT days'];
+  const rows = r.data.map(x => [x.full_name, x.contract_type === 'year_round' ? 'Year-round' : 'Term time plus', x.allowance ?? '', x.used, x.unpaid_days,
+    x.extra_hours_due ?? '', x.extra_hours_approved, x.sickness_days, x.flex_count, x.flex_hours, x.kit_days]);
+  const csv = [head, ...rows].map(row => row.map(c => { let v = String(c ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return `"${v.replace(/"/g, '""')}"`; }).join(',')).join('\r\n');
+  saveFile(`time-off-summary-${yearLabel(yr)}.csv`, '﻿' + csv, 'text/csv');
+}
+
+// ============================================================
+// Settings (administrators)
+// ============================================================
+function viewSettings() {
+  return `<h1>Settings</h1><p class="muted">Check these each summer for the year ahead.</p>
+    <div class="cols"><div class="main card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Term dates</h2><button class="btn small" data-act="addTerm">Add</button></div>
+      <p class="small muted">Each row is a whole term. Half terms and INSET days count as term, so include them.</p>
+      <table class="data"><tbody>${S.terms.map(t => `<tr><td>${esc(t.label)}</td><td>${esc(fmtDate(t.starts, true))} to ${esc(fmtDate(t.ends, true))}</td><td><a href="#" data-act="delTerm" data-id="${t.id}">Delete</a></td></tr>`).join('')}</tbody></table></div>
+    <div class="side card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Bank holidays</h2><button class="btn small" data-act="addBH">Add</button></div>
+      <table class="data"><tbody>${S.bankHolidays.map(b => `<tr><td>${esc(fmtDate(b.day, true))}<br><span class="small muted">${esc(b.name)}</span></td><td><a href="#" data-act="delBH" data-id="${b.day}">Delete</a></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function termForm() {
+  openDlg(`<form><h2>Add term dates</h2><div class="field"><label for="tl">Name</label><input id="tl" name="l" required placeholder="eg Autumn term 2027"></div>
+    <div class="row2"><div class="field"><label for="ts">First day</label><input id="ts" name="s" type="date" required></div>
+    <div class="field"><label for="te">Last day</label><input id="te" name="e" type="date" required></div></div>${formEnd('Add')}</form>`,
+    (f) => callAdmin(() => sb.from('term_dates').insert({ label: f.l.value, starts: f.s.value, ends: f.e.value }), 'Added'));
+}
+function bhForm() {
+  openDlg(`<form><h2>Add a bank holiday</h2><div class="row2"><div class="field"><label for="bd">Date</label><input id="bd" name="d" type="date" required></div>
+    <div class="field"><label for="bn">Name</label><input id="bn" name="n" required></div></div>${formEnd('Add')}</form>`,
+    (f) => callAdmin(() => sb.from('bank_holidays').insert({ day: f.d.value, name: f.n.value }), 'Added'));
+}
+
+// ============================================================
+// Start
+// ============================================================
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') { S.me = null; renderSignIn(false); }
+  if (event === 'SIGNED_IN' && !S.me && !S.loading) { S.loading = true; refresh().finally(() => { S.loading = false; }); }
+});
+(async () => {
+  if (SUPABASE_URL.startsWith('PASTE')) {
+    $('app').innerHTML = '<div class="card narrow"><h1>Almost there</h1><p>Paste the project URL and publishable key into the top of the script in this file (see SETUP.md).</p></div>';
+    return;
+  }
+  S.loading = true;
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { S.loading = false; return renderSignIn(false); }
+  await refresh(); S.loading = false;
+})();
+</script>
+</body>
+</html>
