@@ -22,6 +22,8 @@ A staff time-off web app for Rob Gorrie (Deputy Head, Futures & Communities, Kin
 - **Contract types.** Year-round staff (eg Claudia, Gina) request annual leave in days, with half days allowed, from an allowance that resets on 1st August. Term time plus staff (eg Charlie, Isla, possibly Beverley) log extra hours worked outside contractual hours against a yearly total, which also resets on 1st August.
 - **Term dates.** Each term row covers the whole term, because half terms and INSET days count as term. Hours can also be logged on term days (eg evening events); these are labelled "Term day" for the approver to check.
 - **Bank holidays** are on top of leave and are not counted.
+- **Pro rata.** `staff.start_date` (contractual start) makes the joining year's leave days and extra hours pro rata, because payroll assumes hours are worked evenly through the year. The share is the rest of the starting month (by days) plus each whole month to July, out of 12, rounded to the nearest half (`timeoff.pro_rata`, mirrored by `proRata` in index.html). Approved hours beyond the pro rata total count as overtime and appear in the year-end summary. The rounding and monthly basis are an assumption still to confirm with Finance or HR.
+- **Database changes** to a live database go in `updates/NNN-*.sql`, which Rob runs once in the SQL Editor; `schema.sql` is kept as the full fresh install.
 - **Request types:**
   - annual_leave;
   - kit: keeping in touch days during maternity leave, 10 by default, where any work on a day uses a whole KIT day;

@@ -190,19 +190,32 @@ function adj(staffId, yr, kind) {
   return S.adjustments.filter(a => a.staff_id === staffId && a.leave_year === yr && a.kind === kind)
     .reduce((t, a) => t + Number(a.amount), 0);
 }
+// Pro rata for someone who starts part way through the year (mirrors the server):
+// the rest of the starting month plus each whole month after it, out of 12, to the nearest half
+function proRata(full, started, yr) {
+  full = Number(full) || 0;
+  if (!started || started <= `${yr}-08-01`) return full;
+  if (started > `${yr + 1}-07-31`) return 0;
+  const d = toDate(started), y = d.getUTCFullYear(), m = d.getUTCMonth();
+  const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const part = (daysInMonth - d.getUTCDate() + 1) / daysInMonth;
+  const monthsAfter = (yr + 1 - y) * 12 + 6 - m;   // whole months from the next month to July
+  return Math.round(full * (part + monthsAfter) / 12 * 2) / 2;
+}
+const isProRata = (p, yr) => p.start_date && p.start_date > `${yr}-08-01` && p.start_date <= `${yr + 1}-07-31`;
 function leaveSummary(p, yr) {
-  const allowance = Number(p.leave_days) + adj(p.id, yr, 'leave_days');
+  const allowance = proRata(p.leave_days, p.start_date, yr) + adj(p.id, yr, 'leave_days');
   const reqs = S.requests.filter(r => r.staff_id === p.id && r.kind === 'annual_leave' && leaveYear(r.start_date) === yr && LIVE.includes(r.status));
   const approved = reqs.filter(r => r.status === 'approved' || r.status === 'cancel_requested').reduce((t, r) => t + Number(r.days), 0);
   const waiting = reqs.filter(r => r.status === 'pending' || r.status === 'under_discussion').reduce((t, r) => t + Number(r.days), 0);
   return { allowance, approved, waiting, booked: approved + waiting, left: allowance - approved - waiting };
 }
 function hoursSummary(p, yr) {
-  const target = Number(p.extra_hours) + adj(p.id, yr, 'extra_hours');
+  const target = proRata(p.extra_hours, p.start_date, yr) + adj(p.id, yr, 'extra_hours');
   const rows = S.hours.filter(h => h.staff_id === p.id && leaveYear(h.work_date) === yr);
   const approved = rows.filter(h => h.status === 'approved').reduce((t, h) => t + Number(h.hours), 0);
   const waiting = rows.filter(h => h.status === 'pending').reduce((t, h) => t + Number(h.hours), 0);
-  return { target, approved, waiting, logged: approved + waiting, left: Math.max(0, target - approved - waiting) };
+  return { target, approved, waiting, logged: approved + waiting, left: Math.max(0, target - approved - waiting), over: Math.max(0, approved - target) };
 }
 // Fraction of the year (from 1st August) that has passed
 function yearFraction(yr) {
@@ -395,7 +408,7 @@ function viewHome() {
       <div class="bar" aria-hidden="true"><div class="a" style="width:${w(L.approved)}%"></div><div class="p" style="width:${w(L.waiting)}%"></div></div>
       <span class="key"><i style="background:var(--blue)"></i>${num(L.approved)} approved</span>
       <span class="key"><i style="background:#9fb0cc"></i>${num(L.waiting)} waiting</span>
-      <p class="small muted" style="margin:8px 0 0">${pace(L.booked, L.allowance, yr)}. Your leave resets on 1st August.</p>
+      <p class="small muted" style="margin:8px 0 0">${pace(L.booked, L.allowance, yr)}. ${isProRata(me, yr) ? 'Your allowance this year is pro rata from your start date. ' : ''}Your leave resets on 1st August.</p>
       <div style="margin-top:16px"><button class="btn primary wide" data-act="newLeave">Request leave</button></div>
       <div class="btnrow">
         <button class="btn" data-act="newFlex">Request one-off flex</button>
@@ -412,7 +425,7 @@ function viewHome() {
       <div class="bar" aria-hidden="true"><div class="a" style="width:${w(H.approved)}%"></div><div class="p" style="width:${w(H.waiting)}%"></div></div>
       <span class="key"><i style="background:var(--blue)"></i>${num(H.approved)} approved</span>
       <span class="key"><i style="background:#9fb0cc"></i>${num(H.waiting)} waiting</span>
-      <p class="small muted" style="margin:8px 0 0">${pace(H.logged, H.target, yr)}. ${num(H.left)} hours still to plan before 31st July.</p>
+      <p class="small muted" style="margin:8px 0 0">${H.over ? `You have worked ${plural(H.over, 'hour', 'hours')} beyond your contracted hours this year.` : `${pace(H.logged, H.target, yr)}. ${num(H.left)} hours still to plan before 31st July.`}${isProRata(me, yr) ? ' Your total this year is pro rata from your start date.' : ''}</p>
       <div style="margin-top:16px"><button class="btn primary wide" data-act="newHours">Log hours</button></div>
       <div class="btnrow">
         <button class="btn" data-act="newTermOff">Time off in term</button>
@@ -774,8 +787,9 @@ function viewTeam() {
     <button class="btn primary" data-act="editPerson">Add a person</button></div></div>
     <div class="card scroll"><table class="data"><thead><tr><th>Name</th><th>Contract</th><th>This year</th><th>Approvers</th><th></th></tr></thead><tbody>` +
     S.staff.map(p => {
-      const now = p.contract_type === 'year_round' ? (() => { const L = leaveSummary(p, yr); return `${num(L.left)} of ${num(L.allowance)} days left`; })()
-        : (() => { const H = hoursSummary(p, yr); return `${num(H.logged)} of ${num(H.target)} hours`; })();
+      const now = (p.contract_type === 'year_round' ? (() => { const L = leaveSummary(p, yr); return `${num(L.left)} of ${num(L.allowance)} days left`; })()
+        : (() => { const H = hoursSummary(p, yr); return `${num(H.logged)} of ${num(H.target)} hours` + (H.over ? `<br><span class="tag warn">${plural(H.over, 'hour', 'hours')} over contract</span>` : ''); })())
+        + (isProRata(p, yr) ? `<br><span class="small muted">Pro rata from ${esc(fmtDate(p.start_date))}</span>` : '');
       const ap = S.links.filter(l => l.staff_id === p.id && l.role === 'approver').map(l => esc(nameOf(l.other_id))).join(', ') || '<span class="muted">Administrators</span>';
       return `<tr><td><a href="#" data-act="viewPerson" data-id="${p.id}">${esc(p.full_name)}</a>${p.active ? '' : ' <span class="tag">Inactive</span>'}${p.is_admin ? ' <span class="tag">Admin</span>' : ''}<br><span class="small muted">${esc(p.email)}</span></td>
         <td>${p.contract_type === 'year_round' ? 'Year-round' : 'Term time plus'}</td><td>${now}</td><td>${ap}</td>
@@ -817,6 +831,8 @@ function personForm(p) {
     <div class="field"><label for="pc">Contract</label><select id="pc" name="contract_type">
       <option value="year_round" ${p?.contract_type === 'year_round' ? 'selected' : ''}>Year-round (annual leave)</option>
       <option value="term_time_plus" ${p?.contract_type === 'term_time_plus' ? 'selected' : ''}>Term time plus (extra hours)</option></select></div>
+    <div class="field"><label for="psd">Contractual start date</label><input id="psd" name="start_date" type="date" value="${v('start_date', '')}">
+      <span class="hint" id="prhint">Leave blank for someone in post for the whole year. A start date part way through the year makes this year's allowance pro rata.</span></div>
     <div class="row2"><div class="field"><label for="pl">Leave days a year</label><input id="pl" name="leave_days" type="number" step="0.5" min="0" value="${v('leave_days', 0)}"></div>
     <div class="field"><label for="ph">Extra hours a year</label><input id="ph" name="extra_hours" type="number" step="0.5" min="0" value="${v('extra_hours', 0)}"></div></div>
     <div class="row2"><div class="field"><label for="pd">Working day (hours)</label><input id="pd" name="day_hours" type="number" step="0.25" min="1" value="${v('day_hours', 7.5)}"></div>
@@ -836,7 +852,7 @@ function personForm(p) {
       const row = {
         full_name: f.full_name.value.trim(), email: f.email.value.trim().toLowerCase(), contract_type: f.contract_type.value,
         leave_days: Number(f.leave_days.value) || 0, extra_hours: Number(f.extra_hours.value) || 0, day_hours: Number(f.day_hours.value) || 7.5,
-        kit_from: f.kit_from.value || null, is_admin: f.is_admin.checked, is_sickness_logger: f.is_sickness_logger.checked,
+        kit_from: f.kit_from.value || null, start_date: f.start_date.value || null, is_admin: f.is_admin.checked, is_sickness_logger: f.is_sickness_logger.checked,
         active: f.active.checked, away: f.away.checked, deputy_id: f.deputy_id.value || null
       };
       if (p && p.id === S.me.id && !row.is_admin) { alertBox('You cannot remove your own administrator access.'); return; }
@@ -850,6 +866,16 @@ function personForm(p) {
       if (want.length) { const ins = await sb.from('links').insert(want); if (ins.error) { alertBox(ins.error.message); return; } }
       closeDlg(); await refresh(); flash('Saved');
     });
+  const f = $('dlgBody').querySelector('form');
+  const hint = () => {
+    const sd = f.start_date.value, yr = leaveYear(sd || todayIso());
+    if (!sd || !isProRata({ start_date: sd }, yr)) { $('prhint').textContent = 'Leave blank for someone in post for the whole year. A start date part way through the year makes that year\'s allowance pro rata.'; return; }
+    const what = f.contract_type.value === 'year_round' ? plural(proRata(f.leave_days.value, sd, yr), 'leave day', 'leave days')
+      : plural(proRata(f.extra_hours.value, sd, yr), 'extra hour', 'extra hours');
+    $('prhint').textContent = `For ${yearLabel(yr)} this gives ${what}, pro rata from ${fmtDate(sd)}.`;
+  };
+  ['start_date', 'leave_days', 'extra_hours', 'contract_type'].forEach(k => f[k].addEventListener('input', hint));
+  f.contract_type.addEventListener('change', hint); hint();
 }
 function adjForm(p) {
   const yr = leaveYear(todayIso());
@@ -868,9 +894,9 @@ async function exportYear() {
   const yr = leaveYear(todayIso());
   const r = await sb.rpc('year_summary', { yr });
   if (r.error) { alertBox(r.error.message); return; }
-  const head = ['Name','Contract','Leave allowance (days)','Leave taken (days)','Unpaid or over allowance (days)','Extra hours due','Extra hours approved','Sickness (working days)','One-off flex (count)','One-off flex (hours)','KIT days'];
-  const rows = r.data.map(x => [x.full_name, x.contract_type === 'year_round' ? 'Year-round' : 'Term time plus', x.allowance ?? '', x.used, x.unpaid_days,
-    x.extra_hours_due ?? '', x.extra_hours_approved, x.sickness_days, x.flex_count, x.flex_hours, x.kit_days]);
+  const head = ['Name','Contract','Start date','Leave allowance (days)','Leave taken (days)','Unpaid or over allowance (days)','Extra hours due','Extra hours approved','Hours beyond contract (overtime)','Sickness (working days)','One-off flex (count)','One-off flex (hours)','KIT days'];
+  const rows = r.data.map(x => [x.full_name, x.contract_type === 'year_round' ? 'Year-round' : 'Term time plus', x.start_date ? fmtDate(x.start_date, true) : '',
+    x.allowance ?? '', x.used, x.unpaid_days, x.extra_hours_due ?? '', x.extra_hours_approved, x.extra_hours_over ?? '', x.sickness_days, x.flex_count, x.flex_hours, x.kit_days]);
   const csv = [head, ...rows].map(row => row.map(c => { let v = String(c ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return `"${v.replace(/"/g, '""')}"`; }).join(',')).join('\r\n');
   saveFile(`time-off-summary-${yearLabel(yr)}.csv`, '﻿' + csv, 'text/csv');
 }
