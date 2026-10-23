@@ -14,7 +14,7 @@ A staff time-off web app for Rob Gorrie (Deputy Head, Futures & Communities, Kin
 - `index.html`: a single-file app (vanilla JS, no build step) hosted on GitHub Pages. It uses supabase-js 2.45.4 from jsdelivr with an integrity hash; if you change the version, recompute the hash.
 - `schema.sql`: the database setup, run once in the Supabase SQL Editor. Everything lives in the `timeoff` schema, which must be listed under Data API "Exposed schemas".
 - Supabase project: **kings-apps**, London region, Pro plan, URL `https://zpwerwzekpbnulhgjkvt.supabase.co`. The publishable key is in index.html; it is safe to be public. Never put a secret or service_role key in the repo.
-- One Supabase project holds several of Rob's apps, each in its own schema. The seating plan app (currently in an older EU project) will be moved into a `seating` schema later.
+- One Supabase project holds several of Rob's apps, each in its own schema. The seating plan app (repo kcs-rjg/seatingplans) moved into the `seating` schema in October 2026; it is locked to the emails in `seating.owners` (Rob only) and keeps photos in the private `seating-photos` bucket. The old EU project has been deleted. Any new app gets its own schema with rules that do not assume "signed in" means "allowed", because Time Off staff are signed in to this project too.
 - `SETUP.md` is Rob's setup guide.
 
 ## How it works
@@ -45,8 +45,7 @@ Stage 1 was tested against a local Postgres 16 with stubbed Supabase roles and `
 1. **Email sending.** Rob is buying a new domain for now (perhaps moving later to timeoff@kcs.org.uk or a KingsFutures domain). Set up Resend (or similar) with DNS records, configure Supabase Auth custom SMTP so sign-in links reach all staff, and add an edge function plus a schedule to send the outbox. HTML-escape user text in emails.
 2. **Monthly pace email** on the 1st of each month: matter-of-fact, non-alarmist wording, based on projected year-end position including bookings, to both the person and their line manager, with a reminder to book known hours or holidays early.
 3. **Outlook calendar subscription** via a private ICS feed, with no IT admin approval needed. Stage 1 has a manual .ics download.
-4. Move the seating plan app into this project.
-5. Open questions:
+4. Open questions:
    - check KIT-day rules with Saima;
    - confirm whether Beverley is term time plus;
    - the "under_discussion" status is visible in raw API data to the employee (the UI shows Pending); accepted for now.
